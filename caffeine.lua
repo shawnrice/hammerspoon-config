@@ -1,13 +1,15 @@
 caffeine = hs.menubar.new()
+icons = os.getenv("HOME") .. "/.hammerspoon/icons/"
+iconSize = {h = 20, w = 20}
+
+iconOn = hs.image.imageFromPath(icons .. "coffee-on.png"):setSize(iconSize)
+iconOff = hs.image.imageFromPath(icons .. "coffee-off.png"):setSize(iconSize)
+
 function setCaffeineDisplay(state)
     if state then
-        local iconOn =
-            hs.image.imageFromPath(os.getenv("HOME") .. "/.hammerspoon/icons/coffee-on.png"):setSize({h = 16, w = 16})
         caffeine:setIcon(iconOn)
         caffeine:setTooltip("Computer is staying awake")
     else
-        local iconOff =
-            hs.image.imageFromPath(os.getenv("HOME") .. "/.hammerspoon/icons/coffee-off.png"):setSize({h = 16, w = 16})
         caffeine:setIcon(iconOff)
         caffeine:setTooltip("Computer will go to sleep if there is no activity")
     end
