@@ -1,93 +1,102 @@
-function getChromeTabs()
-  ok, result = hs.osascript.applescript([[
-    on toString(theList)
-      set saveTID to text item delimiters
-      set text item delimiters to "₪"
-      set Final to theList as text
-      set text item delimiters to saveTID
-      return Final
-    end
+function implode(d, p)
+  local newstr
+  newstr = ""
+  if (#p == 1) then
+    return p[1]
+  end
+  for ii = 1, (#p - 1) do
+    newstr = newstr .. p[ii] .. d
+  end
+  newstr = newstr .. p[#p]
+  return newstr
+end
 
-    set allTabs to {}
-    tell application "Google Chrome"
-      repeat with w in (windows)
-        set j to 0
-        repeat with t in (tabs of w)
-          set j to j + 1
-          copy title of t to the end of allTabs
-        end repeat
-      end repeat
-    end tell
-    
-    toString(allTabs)
-  ]])
+function getChromeTabs()
+  ok, result =
+    hs.osascript.javascript(
+    [[
+      const { windows } = Application('Google Chrome');
+      const out = [];
+      
+      for (let w = 0; w < windows.length; w++) {
+        const win = windows[w];
+        const { tabs } = win;
+        for (let t = 0; t < tabs.length; t++) {
+          const tab = win.tabs[t];
+          const { title, url } = tab;
+          
+          out.push({
+            window: w + 1,
+            tab: t + 1,
+            text: title(),
+            subText: url(),
+          });
+        }
+      }
+      
+      JSON.stringify(out);
+  ]]
+  )
   return result
 end
 
-function focusChromeTab(tab)
-  hs.osascript.applescript('tell application "Google Chrome" to set (active tab index of (first window)) to ' .. tab)
-  hs.osascript.applescript('tell application "Google Chrome" to activate')
+function focusChromeTab(tab, window)
+  local script = {
+    'tell application "Google Chrome" to set (active tab index of window ' .. window .. ") to " .. tab,
+    'tell application "Google Chrome"',
+    "set index of window " .. window .. " to 1",
+    "end tell",
+    'tell application "System Events" to tell process "Google Chrome"',
+    'perform action "AXRaise" of window 1',
+    "set frontmost to true",
+    "end tell",
+    'tell application "Google Chrome" to activate'
+  }
+  local logger = hs.logger.new("tttt")
+  logger.i(implode("\n", script))
+  hs.osascript.applescript(implode("\n", script))
 end
 
-local function csplit(str,sep)
-  local ret={}
-  local n=1
-  for w in str:gmatch("([^"..sep.."]*)") do
-    if w ~= '' then
-     ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
-      n = n + 1
-     end -- step forwards on a blank but not a string
+function clamp(num, min, max)
+  if (num < min) then
+    return min
   end
-  return ret
+  if (num > max) then
+    return max
+  end
+  return num
 end
 
-local seperator = "₪"
-
-function parseTabs()
-  local choices = {}
-  for key, tab in pairs(csplit(getChromeTabs(), seperator))
-  do
-    if tab ~= '' then
-      table.insert(choices, {
-        text=tab,
-        index=key
-      })
-    end
+function length(T)
+  local count = 0
+  for _ in pairs(T) do
+    count = count + 1
   end
-  return choices
+  return count
 end
 
 -- Create the chooser.
 -- On selection, copy the emoji and type it into the focused application.
-local chooser = hs.chooser.new(function(choice)
-  -- if not choice then focusLastFocused(); return end
-  focusChromeTab(choice['index'])
-end)
-
-function clamp(num, min, max)
-  if (num < min) then return min end
-  if (num > max) then return max end
-  return num
-end
-
-chooser:rows(5)
+local chooser =
+  hs.chooser.new(
+  function(choice)
+    if choice then
+      -- if not choice then focusLastFocused(); return end
+      focusChromeTab(choice["tab"], choice["window"])
+    end
+  end
+)
 chooser:bgDark(true)
 chooser:searchSubText(true)
 
-function tableLength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
-end
-
 function toggle()
   if (chooser:isVisible() == true) then
-      chooser:hide()
+    chooser:hide()
   else
-      local tabs = parseTabs()
-      chooser:choices(tabs)
-      chooser:rows(clamp(tableLength(tabs), 0, 10))
-      chooser:show()
+    tabs = hs.json.decode(getChromeTabs())
+    chooser:choices(tabs)
+    chooser:rows(clamp(length(tabs), 0, 10))
+    chooser:show()
   end
 end
 

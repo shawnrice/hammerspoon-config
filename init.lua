@@ -2,6 +2,9 @@
 -- Main entrance file for the Hammerspoon configuration. This file should import modules and then
 -- bind keys.
 --
+
+----------------------------------------------------------------------------------------------------
+-- Setup
 hs.logger.defaultLogLevel = "info"
 
 -- Make the console dark
@@ -17,6 +20,7 @@ hyper = {"cmd", "alt", "ctrl"}
 shiftHyper = {"cmd", "alt", "ctrl", "shift"}
 
 hs.loadSpoon("SpoonInstall")
+hs.loadSpoon("ModalMgr")
 
 spoon.SpoonInstall.repos.zzspoons = {
   url = "https://github.com/zzamboni/zzSpoons",
@@ -24,6 +28,7 @@ spoon.SpoonInstall.repos.zzspoons = {
 }
 
 Install = spoon.SpoonInstall
+----------------------------------------------------------------------------------------------------
 
 textClipHistory =
   Install:andUse(
@@ -33,7 +38,7 @@ textClipHistory =
       show_in_menubar = false
     },
     hotkeys = {
-      toggle_clipboard = {{"cmd", "shift"}, "v"}
+      toggle_clipboard = {shiftHyper, "v"}
     },
     start = true
   }
@@ -42,6 +47,7 @@ textClipHistory =
 -- Load the configuration watcher so we can hot reload the hammerspoon configs
 configWatcher = require("configWatcher")
 
+-- We can use a chooser to search chrome's tabs
 chromeTabs = require("chromeTabs")
 hs.hotkey.bind(shiftHyper, "T", chromeTabs)
 
@@ -65,13 +71,38 @@ keyScroll:init()
 local controlEscape = require("controlEscape")
 controlEscape:init()
 
+hs.hotkey.bind(shiftHyper, "C", hs.toggleConsole)
+
 -- hs.loadSpoon('HeadphoneAutoPause')
--- hs.loadSpoon('KSheet')
+-- ksheet = hs.loadSpoon("KSheet")
+-- hs.hotkey.bind(shiftHyper, "K", ksheet)
 -- local headphoneAutoPause = require('./Spoons/HeadphoneAutoPause.spoon/HeadphoneAutoPause.spoon/init.lua')
 -- headphoneAutoPause.start()
 
-print("psu serial" .. hs.battery.psuSerial())
-print(hs.battery.timeRemaining())
+----------------------------------------------------------------------------------------------------
+-- Show battery time remaining
+function formatMinutes(minutes)
+  suffix = (minutes < 0) and "until charged" or "until empty"
+  minutes = math.abs(minutes)
+  hours = math.floor(minutes / 60)
+  minutes = math.floor(minutes % 60)
+  return hours .. " hours and " .. minutes .. " minutes remaining " .. suffix
+end
+
+function showBattery()
+  local time = hs.battery.timeRemaining()
+  if (time == -1.0) then
+    hs.alert("Battery: Calculating time remaining...")
+  elseif (time == -2.0) then
+    hs.alert("Battery: plugged in...")
+  else
+    hs.alert("Battery: " .. formatMinutes(time))
+  end
+end
+hs.hotkey.bind(shiftHyper, "B", showBattery)
+----------------------------------------------------------------------------------------------------
+
+spoon.ModalMgr.supervisor:enter()
 
 -- Todo: add...
 -- http://www.hammerspoon.org/Spoons/WifiNotifier.html or http://www.hammerspoon.org/Spoons/WiFiTransitions.html
