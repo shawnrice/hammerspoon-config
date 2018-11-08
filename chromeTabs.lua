@@ -52,8 +52,6 @@ function focusChromeTab(tab, window)
     "end tell",
     'tell application "Google Chrome" to activate'
   }
-  local logger = hs.logger.new("tttt")
-  logger.i(implode("\n", script))
   hs.osascript.applescript(implode("\n", script))
 end
 

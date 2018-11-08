@@ -16,15 +16,8 @@ function setCaffeineDisplay(state)
 end
 
 function caffeineClicked(keys)
-    -- print(hs.inspect(keys))
     setCaffeineDisplay(hs.caffeinate.toggle("displayIdle"))
 end
-
--- caffeine:setMenu({
---     { title = 'This is a test' },
---     { title = '-' },
---     { title = 'Test 2' },
--- })
 
 if caffeine then
     caffeine:setClickCallback(caffeineClicked)

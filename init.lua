@@ -71,6 +71,7 @@ keyScroll:init()
 local controlEscape = require("controlEscape")
 controlEscape:init()
 
+-- Toggle the Hammerspoon console
 hs.hotkey.bind(shiftHyper, "C", hs.toggleConsole)
 
 -- hs.loadSpoon('HeadphoneAutoPause')
@@ -101,6 +102,14 @@ function showBattery()
 end
 hs.hotkey.bind(shiftHyper, "B", showBattery)
 ----------------------------------------------------------------------------------------------------
+
+-- hs.hotkey.bind(
+--   shiftHyper,
+--   "W",
+--   function()
+--     hs.notify.new({title = "Hammerspoon", informativeText = "Hello World"}):send()
+--   end
+-- )
 
 spoon.ModalMgr.supervisor:enter()
 
